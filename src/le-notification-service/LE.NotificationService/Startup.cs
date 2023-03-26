@@ -1,3 +1,4 @@
+using LE.NotificationService.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -32,6 +33,10 @@ namespace LE.NotificationService
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "LE.NotificationService", Version = "v1" });
             });
+
+            services.AddCors();
+            services.AddSignalR();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -48,11 +53,18 @@ namespace LE.NotificationService
 
             app.UseRouting();
 
+            app.UseCors(x => x
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .SetIsOriginAllowed(origin => true) // allow any origin
+              .AllowCredentials()); // allow credentials
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<NotificationHub>("/notification");
             });
         }
     }
