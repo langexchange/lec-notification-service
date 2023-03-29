@@ -1,3 +1,6 @@
+using AutoMapper;
+using LE.Library.Consul;
+using LE.Library.Host;
 using LE.NotificationService.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -36,6 +39,11 @@ namespace LE.NotificationService
 
             services.AddCors();
             services.AddSignalR();
+            services.AddHttpContextAccessor();
+            services.AddConsul();
+            services.AddRequestHeader();
+
+            AddAutoMappers(services);
 
         }
 
@@ -64,8 +72,23 @@ namespace LE.NotificationService
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<NotificationHub>("/notification");
+                endpoints.MapHub<NotificationHub>("/hub/notification");
             });
+        }
+
+        private void AddAutoMappers(IServiceCollection services)
+        {
+            var mapperConfig = new MapperConfiguration(mc => {
+                //mc.AddProfile(new UserProfile());
+                //mc.AddProfile(new LanguageProfile());
+                //mc.AddProfile(new PostProfile());
+
+                //neo4j mapper
+                //mc.AddProfile(new CountryProfile());
+            });
+
+            IMapper mapper = mapperConfig.CreateMapper();
+            services.AddSingleton(mapper);
         }
     }
 }
