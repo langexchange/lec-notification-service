@@ -6,11 +6,14 @@ using LE.Library.MessageBus.Extensions;
 using LE.Library.MessageBus.Kafka;
 using LE.Library.Warmup;
 using LE.NotificationService.Events;
+using LE.NotificationService.Extensions;
 using LE.NotificationService.Hubs;
+using LE.NotificationService.Infrastructure.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -54,6 +57,7 @@ namespace LE.NotificationService
             services.AddRequestHeader();
 
             AddAutoMappers(services);
+            AddDbContext(services);
 
             services.AddMessageBus(Configuration, new Dictionary<Type, string>
             {
@@ -81,7 +85,7 @@ namespace LE.NotificationService
               .SetIsOriginAllowed(origin => true) // allow any origin
               .AllowCredentials()); // allow credentials
 
-            app.UseAuthorization();
+            app.UseCustomAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
@@ -103,6 +107,10 @@ namespace LE.NotificationService
 
             IMapper mapper = mapperConfig.CreateMapper();
             services.AddSingleton(mapper);
+        }
+        private void AddDbContext(IServiceCollection services)
+        {
+            services.AddDbContext<LanggeneralDbContext>(options => options.UseNpgsql(Env.DB_CONNECTION_STRING));
         }
     }
 }
