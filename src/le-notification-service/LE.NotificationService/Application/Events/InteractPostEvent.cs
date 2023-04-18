@@ -40,6 +40,7 @@ namespace LE.NotificationService.Events
         private readonly IHubContext<NotificationHub> _notificationHubContext;
         public InteractPostEventHandler(IHubContext<NotificationHub> notificationHubContext)
         {
+            _notificationHubContext = notificationHubContext;
         }
 
         public async Task HandleAsync(IHandlerContext<InteractPostEvent> Context, CancellationToken Token = default)
