@@ -1,0 +1,9 @@
+{
+  "MessageChannels": [
+    {
+      "channel": "interacted-post-event-channel",
+      "topic": "interacted-post-event-route"
+    }
+  ]
+
+}

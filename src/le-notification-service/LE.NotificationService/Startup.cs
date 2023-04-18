@@ -1,6 +1,11 @@
 using AutoMapper;
 using LE.Library.Consul;
 using LE.Library.Host;
+using LE.Library.Kernel;
+using LE.Library.MessageBus.Extensions;
+using LE.Library.MessageBus.Kafka;
+using LE.Library.Warmup;
+using LE.NotificationService.Events;
 using LE.NotificationService.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -14,6 +19,7 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace LE.NotificationService
@@ -25,11 +31,15 @@ namespace LE.NotificationService
             Configuration = configuration;
         }
 
+        protected virtual Assembly GetMessageChannelProviderAssembly() => AssemblyManager.GetAssemblies(a => a.GetName().Name == "LE.Library.MessageBus.Kafka").FirstOrDefault();
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var connectionConfig = services.ConfigMessageBusConnection(Configuration);
+            AssemblyManager.Load();
+            services.WarmupServiceStartup();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -45,6 +55,10 @@ namespace LE.NotificationService
 
             AddAutoMappers(services);
 
+            services.AddMessageBus(Configuration, new Dictionary<Type, string>
+            {
+                [typeof(InteractPostEvent)] = MessageValue.INTERACTED_POST_EVENT,
+            }, GetMessageChannelProviderAssembly(), connectionConfig);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
