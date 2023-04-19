@@ -1,5 +1,6 @@
 ﻿using LE.Library.Kernel;
 using LE.NotificationService.Hubs;
+using LE.NotificationService.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System;
@@ -13,11 +14,13 @@ namespace LE.NotificationService.Controllers
     public class NotifyController : ControllerBase
     {
         private readonly IRequestHeader _requestHeader;
+        private readonly INotifyService _notifyService;
         private readonly IHubContext<NotificationHub> _notificationHubContext;
-        public NotifyController(IHubContext<NotificationHub> notificationHubContext, IRequestHeader requestHeader)
+        public NotifyController(IHubContext<NotificationHub> notificationHubContext, IRequestHeader requestHeader, INotifyService notifyService)
         {
             _notificationHubContext = notificationHubContext;
             _requestHeader = requestHeader;
+            _notifyService = notifyService;
         }
 
         [HttpPost("test-send-notify-message")]
@@ -38,5 +41,11 @@ namespace LE.NotificationService.Controllers
             return Ok();
         }
 
+        [HttpPost]
+        public async Task<IActionResult> SeedDataAsync(CancellationToken cancellationToken)
+        {
+            await _notifyService.SeedDataAsync(cancellationToken);
+            return Ok();
+        }
     }
 }

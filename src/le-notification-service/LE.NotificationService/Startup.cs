@@ -9,6 +9,7 @@ using LE.NotificationService.Events;
 using LE.NotificationService.Extensions;
 using LE.NotificationService.Hubs;
 using LE.NotificationService.Infrastructure.Infrastructure;
+using LE.NotificationService.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -55,6 +56,7 @@ namespace LE.NotificationService
             services.AddHttpContextAccessor();
             services.AddConsul();
             services.AddRequestHeader();
+            services.AddScoped<INotifyService, NotifyService>();
 
             AddAutoMappers(services);
             AddDbContext(services);
