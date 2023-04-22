@@ -4,13 +4,14 @@ using LE.NotificationService.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace LE.NotificationService.Controllers
 {
     [ApiController]
-    [Route("notifications")]
+    [Route("api/notifications")]
     public class NotifyController : ControllerBase
     {
         private readonly IRequestHeader _requestHeader;
@@ -24,10 +25,10 @@ namespace LE.NotificationService.Controllers
         }
 
         [HttpPost("test-send-notify-message")]
-        public async Task<IActionResult> SendNotifyAsync(string message)
+        public async Task<IActionResult> SendNotifyAsync(Guid id, string message)
         {
             //await _notificationHubContext.Clients.All.SendAsync("ReceiveMessage", message);
-            await _notificationHubContext.Clients.Group("123").SendAsync("ReceiveMessage", message);
+            await _notificationHubContext.Clients.Group(id.ToString()).SendAsync("ReceiveMessage", message);
             return Ok();
         }
 
@@ -41,10 +42,17 @@ namespace LE.NotificationService.Controllers
             return Ok();
         }
 
-        [HttpPost]
+        [HttpPost("seed-data")]
         public async Task<IActionResult> SeedDataAsync(CancellationToken cancellationToken)
         {
             await _notifyService.SeedDataAsync(cancellationToken);
+            return Ok();
+        }
+
+        [HttpPost("api/notifications/settings/support-locale")]
+        public async Task<IActionResult> AddSettingSupportLocaleAsync(List<string> locale, CancellationToken cancellationToken)
+        {
+            await _notifyService.AddSupportLocaleAsync(locale, cancellationToken);
             return Ok();
         }
     }

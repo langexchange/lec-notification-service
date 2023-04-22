@@ -1,5 +1,4 @@
 ﻿using LE.Library.Kernel;
-using LE.Library.MessageBus;
 using LE.NotificationService.Hubs;
 using LE.NotificationService.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -11,13 +10,13 @@ using System.Threading.Tasks;
 
 namespace LE.NotificationService.Events
 {
-    public class InteractPostEvent : BaseMessage, IMessage
+    public class CommentPostEvent : BaseMessage
     {
         [JsonProperty("postId")]
         public Guid PostId { get; set; }
 
-        [JsonProperty("interactType")]
-        public string InteractType { get; set; }
+        [JsonProperty("commentId")]
+        public Guid CommentId { get; set; }
 
         [JsonProperty("userId")]
         public Guid UserId { get; set; }
@@ -25,36 +24,36 @@ namespace LE.NotificationService.Events
         [JsonProperty("userName")]
         public string UserName { get; set; }
 
-        [JsonProperty("currentInteract")]
-        public int CurrentInteract { get; set; }
+        [JsonProperty("currentComment")]
+        public int CurrentComment { get; set; }
 
         [JsonProperty("notifyIds")]
         public List<Guid> NotifyIds { get; set; }
 
-        public InteractPostEvent(): base(MessageValue.INTERACTED_POST_EVENT)
+        public CommentPostEvent() : base(MessageValue.COMMENTED_POST_EVENT)
         {
         }
     }
 
-    public class InteractPostEventHandler : IAsyncHandler<InteractPostEvent>
+    public class CommentPostEventHandler : IAsyncHandler<CommentPostEvent>
     {
         private readonly INotifyService _notifyService;
         private readonly IHubContext<NotificationHub> _notificationHubContext;
-
-        public InteractPostEventHandler(INotifyService notifyService, IHubContext<NotificationHub> notificationHubContext)
+        public CommentPostEventHandler(INotifyService notifyService, IHubContext<NotificationHub> notificationHubContext)
         {
             _notifyService = notifyService;
             _notificationHubContext = notificationHubContext;
         }
 
-        public async Task HandleAsync(IHandlerContext<InteractPostEvent> Context, CancellationToken cancellationToken = default)
+        public async Task HandleAsync(IHandlerContext<CommentPostEvent> Context, CancellationToken cancellationToken = default)
         {
             var request = Context.Request;
-            foreach(var id in request.NotifyIds)
+
+            foreach (var id in request.NotifyIds)
             {
-                await _notificationHubContext.Clients.Group(id.ToString()).SendAsync("ReceiveMessage", $"{request.UserName} has interact your post");
+                await _notificationHubContext.Clients.Group(id.ToString()).SendAsync("ReceiveMessage", $"{request.UserName} has comment on post you commented before");
             }
-            
+
             await _notifyService.AddToNotifyBoxAsync(request, cancellationToken);
         }
     }

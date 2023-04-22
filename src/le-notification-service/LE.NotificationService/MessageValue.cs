@@ -7,5 +7,6 @@
         public const string POST_CREATED_EVENT = "post-created-event";
         public const string FRIEND_REQUEST_SENT_EVENT = "friend-request-sent-event";
         public const string FRIEND_REQUEST_ACCEPT_EVENT = "friend-request-accepted-event";
+        public const string COMMENTED_POST_EVENT = "commented-post-event";
     }
 }

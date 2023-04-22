@@ -57,13 +57,19 @@ namespace LE.NotificationService
             services.AddConsul();
             services.AddRequestHeader();
             services.AddScoped<INotifyService, NotifyService>();
+            //services.AddScoped<IUserService, UserService>();
 
             AddAutoMappers(services);
             AddDbContext(services);
 
             services.AddMessageBus(Configuration, new Dictionary<Type, string>
             {
+                [typeof(PostCreatedEvent)] = MessageValue.POST_CREATED_EVENT,
                 [typeof(InteractPostEvent)] = MessageValue.INTERACTED_POST_EVENT,
+                [typeof(InteractCommentEvent)] = MessageValue.INTERACTED_COMMENT_EVENT,
+                [typeof(CommentPostEvent)] = MessageValue.COMMENTED_POST_EVENT,
+                [typeof(FriendRequestSentEvent)] = MessageValue.FRIEND_REQUEST_SENT_EVENT,
+                [typeof(FriendRequestAcceptedEvent)] = MessageValue.FRIEND_REQUEST_ACCEPT_EVENT,
             }, GetMessageChannelProviderAssembly(), connectionConfig);
         }
 

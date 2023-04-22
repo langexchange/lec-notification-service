@@ -1,7 +1,12 @@
 ﻿using LE.Library.Kernel;
+using LE.NotificationService.Hubs;
+using LE.NotificationService.Services;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace LE.NotificationService.Events
 {
@@ -22,6 +27,28 @@ namespace LE.NotificationService.Events
         public FriendRequestSentEvent() : base(MessageValue.FRIEND_REQUEST_SENT_EVENT)
         {
 
+        }
+    }
+
+    public class FriendRequestSentEventHandler : IAsyncHandler<FriendRequestSentEvent>
+    {
+        private readonly INotifyService _notifyService;
+        private readonly IHubContext<NotificationHub> _notificationHubContext;
+        public FriendRequestSentEventHandler(INotifyService notifyService, IHubContext<NotificationHub> notificationHubContext)
+        {
+            _notifyService = notifyService;
+            _notificationHubContext = notificationHubContext;
+        }
+
+        public async Task HandleAsync(IHandlerContext<FriendRequestSentEvent> Context, CancellationToken cancellationToken = default)
+        {
+            var request = Context.Request;
+            foreach (var id in request.NotifyIds)
+            {
+                await _notificationHubContext.Clients.Group(id.ToString()).SendAsync("ReceiveMessage", $"{request.UserName} sent you a friend request");
+            }
+
+            await _notifyService.AddToNotifyBoxAsync(request, cancellationToken);
         }
     }
 }
