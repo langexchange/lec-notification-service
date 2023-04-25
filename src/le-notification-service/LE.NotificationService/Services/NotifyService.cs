@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using LE.NotificationService.Constant;
+using LE.NotificationService.Dtos;
 using LE.NotificationService.Events;
 using LE.NotificationService.Infrastructure.Infrastructure;
 using LE.NotificationService.Infrastructure.Infrastructure.Entities;
@@ -32,7 +33,7 @@ namespace LE.NotificationService.Services
             var filename = "Jsonfiles/settingnotification.json";
             var text = File.ReadAllText(filename);
             var dictionary = JsonConvert.DeserializeObject<Dictionary<string, NotifySetting>>(text);
-            
+
             var localeSettings = dictionary.SelectMany(x =>
             {
                 var values = x.Value.NotifyService;
@@ -42,7 +43,7 @@ namespace LE.NotificationService.Services
                 }).ToDictionary(z => z.Key, z => z.Value);
             }).ToDictionary(pair => pair.Key, pair => pair.Value);
 
-            var settings = localeSettings.Select(x => 
+            var settings = localeSettings.Select(x =>
                                                 new Setting { Id = System.Guid.NewGuid(), ServiceName = "notify-service", SettingKey = x.Key, SettingValue = x.Value }
                                                 );
             await _context.Settings.AddRangeAsync(settings);
@@ -53,7 +54,7 @@ namespace LE.NotificationService.Services
         public async Task AddSupportLocaleAsync(List<string> locale, CancellationToken cancellationToken = default)
         {
             var supportedLocaleSetting = await _context.Settings.FirstOrDefaultAsync(x => x.SettingKey == NotifyKey.SUPPORT_LOCALE);
-            if(supportedLocaleSetting == null)
+            if (supportedLocaleSetting == null)
             {
                 _context.Add(new Setting
                 {
@@ -119,7 +120,7 @@ namespace LE.NotificationService.Services
             }
             await _context.SaveChangesAsync();
 
-            return user.Notibox.HasValue? user.Notibox.Value: Guid.Empty;
+            return user.Notibox.HasValue ? user.Notibox.Value : Guid.Empty;
         }
 
         public async Task AddToNotifyBoxAsync(PostCreatedEvent @event, CancellationToken cancellationToken = default)
@@ -128,7 +129,7 @@ namespace LE.NotificationService.Services
             {
                 Notiid = Guid.NewGuid(),
                 NotifiKey = $"{NotifyKey.DEFAULT_SUPPORT_LOCALE}.{NotifyKey.CREATE_POST_NOTI}",
-                NotifyData = JsonConvert.SerializeObject(new {@event.UserName, @event.UserId}),
+                NotifyData = JsonConvert.SerializeObject(new { @event.UserName, @event.UserId }),
                 Postid = @event.PostId
             };
             _context.Sharingnotifications.Add(sharingNoti);
@@ -157,7 +158,7 @@ namespace LE.NotificationService.Services
                 if (notiBoxId == Guid.Empty)
                     continue;
                 var postNotify = await _context.Postnotifications.FirstOrDefaultAsync(x => x.Postid == @event.PostId);
-                if(postNotify == null)
+                if (postNotify == null)
                 {
                     var postNoti = new Postnotification
                     {
@@ -252,7 +253,7 @@ namespace LE.NotificationService.Services
                         Boxid = notiBoxId,
                         Notiid = Guid.NewGuid(),
                         NotifiKey = $"{NotifyKey.DEFAULT_SUPPORT_LOCALE}.{NotifyKey.FRIEND_REQUEST_ACCEPTED}",
-                        NotifyData = JsonConvert.SerializeObject(new { @event.UserName, @event.FromId, @event.ToId})
+                        NotifyData = JsonConvert.SerializeObject(new { @event.UserName, @event.FromId, @event.ToId })
                     };
                     _context.Friendnotifications.Add(friendRequestNoti);
                 }
@@ -262,11 +263,11 @@ namespace LE.NotificationService.Services
 
         public async Task AddToNotifyBoxAsync(CommentPostEvent @event, CancellationToken cancellationToken = default)
         {
-            var sharingNotiEntity = await _context.Sharingnotifications.FirstOrDefaultAsync(x => x.Postid == @event.PostId 
+            var sharingNotiEntity = await _context.Sharingnotifications.FirstOrDefaultAsync(x => x.Postid == @event.PostId
                                                                                            && x.NotifiKey.Contains(NotifyKey.COMMENT_POST_OWNER_NOTI));
 
             var newSharingNotiId = Guid.NewGuid();
-            if(sharingNotiEntity == null)
+            if (sharingNotiEntity == null)
             {
                 var sharingNoti = new Sharingnotification
                 {
@@ -284,7 +285,7 @@ namespace LE.NotificationService.Services
                 sharingNotiEntity.UpdatedAt = DateTime.UtcNow;
                 _context.Sharingnotifications.Update(sharingNotiEntity);
             }
-           
+
 
             var post = await _context.Posts.FirstOrDefaultAsync(x => x.Postid == @event.PostId);
             if (post == null)
@@ -323,11 +324,93 @@ namespace LE.NotificationService.Services
                 var newNotiBoxSharing = new Notiboxsharing
                 {
                     Boxid = notiBoxId,
-                    Notiid = sharingNotiEntity == null? newSharingNotiId: sharingNotiEntity.Notiid
+                    Notiid = sharingNotiEntity == null ? newSharingNotiId : sharingNotiEntity.Notiid
                 };
                 _context.Add(newNotiBoxSharing);
             }
             await _context.SaveChangesAsync();
         }
+
+        private async Task GenerateNotifyMessage(NotificationDto dto, CancellationToken cancellationToken)
+        {
+            var setting = await _context.Settings.FirstOrDefaultAsync(x => x.SettingKey == dto.NotifiKey);
+            if (setting == null)
+                return;
+
+            var notifyData = JsonConvert.DeserializeObject<Dictionary<string, object>>(dto.NotifyData);
+            dto.NotifyMessage = setting.SettingValue;
+
+            if (setting.SettingValue.Contains("{X}"))
+            {
+                //try replace X to username
+                if(notifyData.TryGetValue("UserName", out var userName))
+                {
+                    dto.NotifyMessage = dto.NotifyMessage.Replace("{X}", (string)userName);
+                }
+            }
+            if (setting.SettingValue.Contains("{Y}"))
+            {
+                if (notifyData.TryGetValue("CurrentComment", out var currentComment))
+                {
+                    dto.NotifyMessage = dto.NotifyMessage.Replace("{Y}", ((int)(long)currentComment).ToString());
+                }
+                else
+                {
+                    if (notifyData.TryGetValue("CurrentInteract", out var currentInteract))
+                    {
+                        dto.NotifyMessage = dto.NotifyMessage.Replace("{Y}", ((int)(long)currentInteract).ToString());
+                    }
+                }
+            }
+        }
+        public async Task<List<NotificationDto>> GetNotiBoxMessageAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var boxId = await CreateUserNotiBoxAsync(userId, cancellationToken);
+            if (boxId == Guid.Empty)
+                return null;
+
+            var notifications = new List<NotificationDto>();
+
+            var friendNotiMessage = await _context.Friendnotifications.Where(x => x.Boxid == boxId).ToListAsync();
+            notifications.AddRange(_mapper.Map<List<NotificationDto>>(friendNotiMessage));
+
+            var postNotiMessage = await _context.Postnotifications.Where(x => x.Boxid == boxId).ToListAsync();
+            notifications.AddRange(_mapper.Map<List<NotificationDto>>(postNotiMessage));
+
+            var commentNotiMessage = await _context.Commentnotifications.Where(x => x.Boxid == boxId).ToListAsync();
+            notifications.AddRange(_mapper.Map<List<NotificationDto>>(commentNotiMessage));
+
+            var sharingNotiMessage = from notiShating in _context.Notiboxsharings
+                                     where notiShating.Boxid == boxId
+                                     join o in _context.Sharingnotifications
+                                     on notiShating.Notiid equals o.Notiid
+                                     select new NotificationDto
+                                     {
+                                         Notiid = o.Notiid,
+                                         NotifiKey = o.NotifiKey,
+                                         NotifyData = o.NotifyData,
+                                         Postid = o.Postid,
+                                         Type = "sharing notify",
+                                         CreatedAt = o.CreatedAt,
+                                         UpdatedAt = o.UpdatedAt
+                                     };
+            notifications.AddRange(sharingNotiMessage);
+            
+            //need to translate message key to message value
+            var supportedLocale = await _context.Settings.FirstOrDefaultAsync(x => x.SettingKey == NotifyKey.SUPPORT_LOCALE);
+
+            var notifyLocale = await GetUserNotifyLocale(userId, cancellationToken);
+            foreach(var notification in notifications)
+            {
+                var keySetting = notification.NotifiKey.Substring(notification.NotifiKey.IndexOf('.') + 1);
+                notification.NotifiKey = $"{notifyLocale}.{keySetting}";
+                //notification.NotifyMessage = "";
+                await GenerateNotifyMessage(notification, cancellationToken);
+            }
+
+            notifications.OrderByDescending(x => x.UpdatedAt);
+
+            return notifications;
+        } 
     }
 }

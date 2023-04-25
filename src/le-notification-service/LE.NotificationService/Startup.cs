@@ -5,6 +5,7 @@ using LE.Library.Kernel;
 using LE.Library.MessageBus.Extensions;
 using LE.Library.MessageBus.Kafka;
 using LE.Library.Warmup;
+using LE.NotificationService.AutoMappers;
 using LE.NotificationService.Events;
 using LE.NotificationService.Extensions;
 using LE.NotificationService.Hubs;
@@ -54,6 +55,7 @@ namespace LE.NotificationService
             services.AddCors();
             services.AddSignalR();
             services.AddHttpContextAccessor();
+            services.AddCustomAuthorization(Configuration);
             services.AddConsul();
             services.AddRequestHeader();
             services.AddScoped<INotifyService, NotifyService>();
@@ -105,12 +107,7 @@ namespace LE.NotificationService
         private void AddAutoMappers(IServiceCollection services)
         {
             var mapperConfig = new MapperConfiguration(mc => {
-                //mc.AddProfile(new UserProfile());
-                //mc.AddProfile(new LanguageProfile());
-                //mc.AddProfile(new PostProfile());
-
-                //neo4j mapper
-                //mc.AddProfile(new CountryProfile());
+                mc.AddProfile(new NotificationProfile());
             });
 
             IMapper mapper = mapperConfig.CreateMapper();

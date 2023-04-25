@@ -2,6 +2,7 @@
 using LE.NotificationService.Hubs;
 using LE.NotificationService.Services;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -39,10 +40,12 @@ namespace LE.NotificationService.Events
     {
         private readonly INotifyService _notifyService;
         private readonly IHubContext<NotificationHub> _notificationHubContext;
-        public CommentPostEventHandler(INotifyService notifyService, IHubContext<NotificationHub> notificationHubContext)
+        private readonly ILogger<CommentPostEventHandler> _logger;
+        public CommentPostEventHandler(INotifyService notifyService, IHubContext<NotificationHub> notificationHubContext, ILogger<CommentPostEventHandler> logger)
         {
             _notifyService = notifyService;
             _notificationHubContext = notificationHubContext;
+            _logger = logger;
         }
 
         public async Task HandleAsync(IHandlerContext<CommentPostEvent> Context, CancellationToken cancellationToken = default)
@@ -55,6 +58,7 @@ namespace LE.NotificationService.Events
             }
 
             await _notifyService.AddToNotifyBoxAsync(request, cancellationToken);
+            _logger.LogInformation("Handle commented-post-event-route");
         }
     }
 }

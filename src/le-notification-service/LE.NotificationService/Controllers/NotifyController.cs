@@ -38,8 +38,9 @@ namespace LE.NotificationService.Controllers
             var uuid = _requestHeader.GetOwnerId();
             if (uuid == Guid.Empty)
                 return BadRequest("Require Access token");
-            //await _notificationHubContext.Clients.All.SendAsync("ReceiveMessage", message);
-            return Ok();
+
+            var dtos = await _notifyService.GetNotiBoxMessageAsync(uuid, cancellationToken);
+            return Ok(dtos);
         }
 
         [HttpPost("seed-data")]
