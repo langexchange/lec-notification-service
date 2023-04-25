@@ -5,10 +5,12 @@ using LE.Library.Kernel;
 using LE.Library.MessageBus.Extensions;
 using LE.Library.MessageBus.Kafka;
 using LE.Library.Warmup;
+using LE.NotificationService.AutoMappers;
 using LE.NotificationService.Events;
 using LE.NotificationService.Extensions;
 using LE.NotificationService.Hubs;
 using LE.NotificationService.Infrastructure.Infrastructure;
+using LE.NotificationService.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -53,15 +55,23 @@ namespace LE.NotificationService
             services.AddCors();
             services.AddSignalR();
             services.AddHttpContextAccessor();
+            services.AddCustomAuthorization(Configuration);
             services.AddConsul();
             services.AddRequestHeader();
+            services.AddScoped<INotifyService, NotifyService>();
+            //services.AddScoped<IUserService, UserService>();
 
             AddAutoMappers(services);
             AddDbContext(services);
 
             services.AddMessageBus(Configuration, new Dictionary<Type, string>
             {
+                [typeof(PostCreatedEvent)] = MessageValue.POST_CREATED_EVENT,
                 [typeof(InteractPostEvent)] = MessageValue.INTERACTED_POST_EVENT,
+                [typeof(InteractCommentEvent)] = MessageValue.INTERACTED_COMMENT_EVENT,
+                [typeof(CommentPostEvent)] = MessageValue.COMMENTED_POST_EVENT,
+                [typeof(FriendRequestSentEvent)] = MessageValue.FRIEND_REQUEST_SENT_EVENT,
+                [typeof(FriendRequestAcceptedEvent)] = MessageValue.FRIEND_REQUEST_ACCEPT_EVENT,
             }, GetMessageChannelProviderAssembly(), connectionConfig);
         }
 
@@ -97,12 +107,7 @@ namespace LE.NotificationService
         private void AddAutoMappers(IServiceCollection services)
         {
             var mapperConfig = new MapperConfiguration(mc => {
-                //mc.AddProfile(new UserProfile());
-                //mc.AddProfile(new LanguageProfile());
-                //mc.AddProfile(new PostProfile());
-
-                //neo4j mapper
-                //mc.AddProfile(new CountryProfile());
+                mc.AddProfile(new NotificationProfile());
             });
 
             IMapper mapper = mapperConfig.CreateMapper();

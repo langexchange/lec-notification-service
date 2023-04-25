@@ -1,5 +1,4 @@
 ﻿using LE.Library.Kernel;
-using LE.Library.MessageBus;
 using LE.NotificationService.Hubs;
 using LE.NotificationService.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -11,13 +10,10 @@ using System.Threading.Tasks;
 
 namespace LE.NotificationService.Events
 {
-    public class InteractPostEvent : BaseMessage, IMessage
+    public class PostCreatedEvent : BaseMessage
     {
         [JsonProperty("postId")]
         public Guid PostId { get; set; }
-
-        [JsonProperty("interactType")]
-        public string InteractType { get; set; }
 
         [JsonProperty("userId")]
         public Guid UserId { get; set; }
@@ -25,36 +21,32 @@ namespace LE.NotificationService.Events
         [JsonProperty("userName")]
         public string UserName { get; set; }
 
-        [JsonProperty("currentInteract")]
-        public int CurrentInteract { get; set; }
-
         [JsonProperty("notifyIds")]
         public List<Guid> NotifyIds { get; set; }
 
-        public InteractPostEvent(): base(MessageValue.INTERACTED_POST_EVENT)
+        public PostCreatedEvent() : base(MessageValue.POST_CREATED_EVENT)
         {
         }
     }
 
-    public class InteractPostEventHandler : IAsyncHandler<InteractPostEvent>
+    public class PostCreatedEventHandler : IAsyncHandler<PostCreatedEvent>
     {
         private readonly INotifyService _notifyService;
         private readonly IHubContext<NotificationHub> _notificationHubContext;
-
-        public InteractPostEventHandler(INotifyService notifyService, IHubContext<NotificationHub> notificationHubContext)
+        public PostCreatedEventHandler(INotifyService notifyService, IHubContext<NotificationHub> notificationHubContext)
         {
             _notifyService = notifyService;
             _notificationHubContext = notificationHubContext;
         }
 
-        public async Task HandleAsync(IHandlerContext<InteractPostEvent> Context, CancellationToken cancellationToken = default)
+        public async Task HandleAsync(IHandlerContext<PostCreatedEvent> Context, CancellationToken cancellationToken = default)
         {
             var request = Context.Request;
-            foreach(var id in request.NotifyIds)
+            foreach (var id in request.NotifyIds)
             {
-                await _notificationHubContext.Clients.Group(id.ToString()).SendAsync("ReceiveMessage", $"{request.UserName} has interact your post");
+                await _notificationHubContext.Clients.Group(id.ToString()).SendAsync("ReceiveMessage", $"{request.UserName} has added new post");
             }
-            
+
             await _notifyService.AddToNotifyBoxAsync(request, cancellationToken);
         }
     }

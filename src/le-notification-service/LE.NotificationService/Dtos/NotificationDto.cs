@@ -5,10 +5,13 @@ namespace LE.NotificationService.Dtos
     public class NotificationDto
     {
         public Guid Notiid { get; set; }
-        public Guid Boxid { get; set; }
-        public string Text { get; set; }
-        public string Url { get; set; }
-        public Guid Type { get; set; }
-
+        public string NotifyMessage { get; set; }
+        public string NotifiKey { get; set; }
+        public string NotifyData { get; set; }
+        public string Type { get; set; }
+        public Guid? Postid { get; set; }
+        public Guid? Commentid { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }
