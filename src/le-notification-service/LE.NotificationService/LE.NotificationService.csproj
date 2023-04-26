@@ -6,6 +6,9 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.25" />
+    <PackageReference Include="Hangfire.Core" Version="1.7.25" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.8.6" />
     <PackageReference Include="LE.Library" Version="0.0.1" />
     <PackageReference Include="LE.Library.Consul" Version="0.0.1" />
     <PackageReference Include="LE.Library.MessageBus.Kafka" Version="0.0.1" />

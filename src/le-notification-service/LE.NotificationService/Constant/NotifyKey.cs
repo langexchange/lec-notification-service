@@ -14,6 +14,8 @@
 
         public const string FRIEND_REQUEST_SENT = "notify-service.friend_request_sent";
         public const string FRIEND_REQUEST_ACCEPTED = "notify-service.friend_request_accepted";
+        public const string SUMMARY_LEARNING_PROCESS_WEEKLY = "notify-service.summary_learning_process_weekly";
+        public const string SUMMARY_LEARNING_PROCESS_WEEKLY_DETAIL = "notify-service.summary_learning_process_weekly_detail";
 
         //supported locale
         public const string SUPPORT_LOCALE = "support_locale";
