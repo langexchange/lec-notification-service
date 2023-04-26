@@ -9,5 +9,6 @@
         public const string FRIEND_REQUEST_ACCEPT_EVENT = "friend-request-accepted-event";
         public const string COMMENTED_POST_EVENT = "commented-post-event";
         public const string STATISTICAL_SIGNAL = "statistical-signal";
+        public const string LEARNING_PROCESS_CALCULATED_EVENT = "learning-process-calculated-event";
     }
 }

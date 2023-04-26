@@ -360,9 +360,58 @@ namespace LE.NotificationService.Services
                     {
                         dto.NotifyMessage = dto.NotifyMessage.Replace("{Y}", ((int)(long)currentInteract).ToString());
                     }
+                    else
+                    {
+                        if(notifyData.TryGetValue("TotalVocabInProcess", out var totalVocabInProcess))
+                            dto.NotifyMessage = dto.NotifyMessage.Replace("{Y}", ((int)(long)totalVocabInProcess).ToString());
+                    }
                 }
             }
+            if (dto.Type == NotifyType.VOCAB_NOTIFY)
+                await GenerateSubNotificationAsync(dto, cancellationToken);
         }
+
+        private async Task GenerateSubNotificationAsync(NotificationDto dto, CancellationToken cancellationToken)
+        {
+            var notifyData = JsonConvert.DeserializeObject<Dictionary<string, object>>(dto.NotifyData);
+            if(notifyData.TryGetValue("DetailProcess", out var detailProcessString))
+            {
+                var detailProcesses = JsonConvert.DeserializeObject<List<LearningVocabProcessDetailDto>>((string)detailProcessString);
+                if (detailProcesses.FirstOrDefault() == null || detailProcesses.Count == 0)
+                    return;
+                var setting = await _context.Settings.FirstOrDefaultAsync(x => x.SettingKey == detailProcesses.FirstOrDefault().NotifiKey);
+                if (setting == null)
+                    return;
+
+                var subNofies = new List<string>();
+                foreach (var detailProcess in detailProcesses)
+                {
+                    var notify = setting.SettingValue;
+                    var subNotidata = JsonConvert.DeserializeObject<Dictionary<string, object>>(detailProcess.NotifyData);
+
+                    if (notify.Contains("{X}"))
+                    {
+                        //try replace X to username
+                        if (subNotidata.TryGetValue("Title", out var title))
+                        {
+                            notify = notify.Replace("{X}", (string)title);
+                        }
+                    }
+                    if (notify.Contains("{Y}"))
+                    {
+                        if (subNotidata.TryGetValue("Percent", out var percent))
+                        {
+                            notify = notify.Replace("{Y}", ((int)(long)percent).ToString());
+                        }
+                    }
+
+                    subNofies.Add(notify);
+                }
+                dto.SubNotification = subNofies;
+                dto.NotifyData = null;
+            }    
+        }
+
         public async Task<List<NotificationDto>> GetNotiBoxMessageAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var boxId = await CreateUserNotiBoxAsync(userId, cancellationToken);
@@ -380,6 +429,9 @@ namespace LE.NotificationService.Services
             var commentNotiMessage = await _context.Commentnotifications.Where(x => x.Boxid == boxId).ToListAsync();
             notifications.AddRange(_mapper.Map<List<NotificationDto>>(commentNotiMessage));
 
+            var vocabNotiMessage = await _context.Vocabpackagenotifications.Where(x => x.Boxid == boxId).ToListAsync();
+            notifications.AddRange(_mapper.Map<List<NotificationDto>>(vocabNotiMessage));
+
             var sharingNotiMessage = from notiShating in _context.Notiboxsharings
                                      where notiShating.Boxid == boxId
                                      join o in _context.Sharingnotifications
@@ -390,7 +442,7 @@ namespace LE.NotificationService.Services
                                          NotifiKey = o.NotifiKey,
                                          NotifyData = o.NotifyData,
                                          Postid = o.Postid,
-                                         Type = "sharing notify",
+                                         Type = NotifyType.SHARING_NOTIFY,
                                          CreatedAt = o.CreatedAt,
                                          UpdatedAt = o.UpdatedAt
                                      };
@@ -411,6 +463,44 @@ namespace LE.NotificationService.Services
             notifications.OrderByDescending(x => x.UpdatedAt);
 
             return notifications;
-        } 
+        }
+
+        public async Task AddToNotifyBoxAsync(LearningVocabProcessCalculatedEvent @event, CancellationToken cancellationToken = default)
+        {
+            var notiBoxId = await CreateUserNotiBoxAsync(@event.UserId, cancellationToken);
+            if (notiBoxId == Guid.Empty)
+                return;
+
+            var detailLearningProcess = new List<LearningVocabProcessDetailDto>();
+            foreach(var vocab in @event.Result)
+            {
+                var percentProcess = 100;
+                if(vocab.TotalVocabs != 0)
+                    percentProcess = (int)(1.0 - (double)vocab.CurrentNumOfVocab/(double)vocab.TotalVocabs) *100;
+                var vocabProcess = new LearningVocabProcessDetailDto
+                {
+                    NotifiKey = $"{NotifyKey.DEFAULT_SUPPORT_LOCALE}.{NotifyKey.SUMMARY_LEARNING_PROCESS_WEEKLY_DETAIL}",
+                    NotifyData = JsonConvert.SerializeObject(new { vocab.Title, Percent = percentProcess }),
+                };
+                detailLearningProcess.Add(vocabProcess);
+            }
+
+            var notifyData = new Dictionary<string, object>()
+            {
+                ["TotalVocabInProcess"] = @event.Result.Count(),
+                ["DetailProcess"] = JsonConvert.SerializeObject(detailLearningProcess)
+            };
+
+            var vocabNotify = new Vocabpackagenotification()
+            {
+                Notiid = Guid.NewGuid(),
+                Boxid = notiBoxId,
+                NotifiKey = $"{NotifyKey.DEFAULT_SUPPORT_LOCALE}.{NotifyKey.SUMMARY_LEARNING_PROCESS_WEEKLY}",
+                NotifyData = JsonConvert.SerializeObject(notifyData)
+            };
+
+            _context.Vocabpackagenotifications.Add(vocabNotify);
+            await _context.SaveChangesAsync();
+        }
     }
 }

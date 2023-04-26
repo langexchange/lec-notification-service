@@ -77,6 +77,7 @@ namespace LE.NotificationService
                 [typeof(CommentPostEvent)] = MessageValue.COMMENTED_POST_EVENT,
                 [typeof(FriendRequestSentEvent)] = MessageValue.FRIEND_REQUEST_SENT_EVENT,
                 [typeof(FriendRequestAcceptedEvent)] = MessageValue.FRIEND_REQUEST_ACCEPT_EVENT,
+                [typeof(LearningVocabProcessCalculatedEvent)] = MessageValue.LEARNING_PROCESS_CALCULATED_EVENT,
             }, GetMessageChannelProviderAssembly(), connectionConfig);
         }
 
@@ -103,6 +104,7 @@ namespace LE.NotificationService
             //app.UseCustomAuthorization();
 
             app.UseHangfireServer();
+            app.UseHangfireDashboard();
             //RecurringJob.AddOrUpdate(() => Console.WriteLine("Minutely Job"), Cron.Minutely);
             app.UseMiddleware<RecurringJobMiddleware>();
 
@@ -111,6 +113,7 @@ namespace LE.NotificationService
             {
                 endpoints.MapControllers();
                 endpoints.MapHub<NotificationHub>("/hub/notification");
+                endpoints.MapHangfireDashboard();
             });
         }
 

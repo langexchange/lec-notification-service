@@ -17,6 +17,7 @@ namespace LE.NotificationService.Services
         Task AddToNotifyBoxAsync(FriendRequestSentEvent @event, CancellationToken cancellationToken = default);
         Task AddToNotifyBoxAsync(FriendRequestAcceptedEvent @event, CancellationToken cancellationToken = default);
         Task AddToNotifyBoxAsync(CommentPostEvent @event, CancellationToken cancellationToken = default);
+        Task AddToNotifyBoxAsync(LearningVocabProcessCalculatedEvent @event, CancellationToken cancellationToken = default);
         Task<List<NotificationDto>> GetNotiBoxMessageAsync(Guid userId, CancellationToken cancellationToken = default);
     }
 }

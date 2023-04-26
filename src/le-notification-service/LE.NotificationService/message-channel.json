@@ -27,6 +27,10 @@
     {
       "channel": "statistical-signal-channel",
       "topic": "statistical-signal-route"
+    },
+    {
+      "channel": "learning-process-calculated-event-channel",
+      "topic": "learning-process-calculated-event-route"
     }
   ]
 
