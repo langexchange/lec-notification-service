@@ -1,4 +1,6 @@
 using AutoMapper;
+using Hangfire;
+using Hangfire.PostgreSql;
 using LE.Library.Consul;
 using LE.Library.Host;
 using LE.Library.Kernel;
@@ -13,19 +15,15 @@ using LE.NotificationService.Infrastructure.Infrastructure;
 using LE.NotificationService.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace LE.NotificationService
 {
@@ -59,10 +57,17 @@ namespace LE.NotificationService
             services.AddConsul();
             services.AddRequestHeader();
             services.AddScoped<INotifyService, NotifyService>();
+            services.AddScoped<IScheduleService, ScheduleService>();
             //services.AddScoped<IUserService, UserService>();
 
             AddAutoMappers(services);
             AddDbContext(services);
+            AddHangfireCronJob(services);
+
+            services.AddHangfireServer(serverOptions =>
+            {
+                serverOptions.ServerName = "LE Schedule Server";
+            });
 
             services.AddMessageBus(Configuration, new Dictionary<Type, string>
             {
@@ -95,7 +100,12 @@ namespace LE.NotificationService
               .SetIsOriginAllowed(origin => true) // allow any origin
               .AllowCredentials()); // allow credentials
 
-            app.UseCustomAuthorization();
+            //app.UseCustomAuthorization();
+
+            app.UseHangfireServer();
+            //RecurringJob.AddOrUpdate(() => Console.WriteLine("Minutely Job"), Cron.Minutely);
+            app.UseMiddleware<RecurringJobMiddleware>();
+
 
             app.UseEndpoints(endpoints =>
             {
@@ -116,6 +126,18 @@ namespace LE.NotificationService
         private void AddDbContext(IServiceCollection services)
         {
             services.AddDbContext<LanggeneralDbContext>(options => options.UseNpgsql(Env.DB_CONNECTION_STRING));
+        }
+
+        private void AddHangfireCronJob(IServiceCollection services)
+        {
+            services.AddHangfire(configuration => configuration
+                  .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+                  .UseSimpleAssemblyNameTypeSerializer()
+                  .UseRecommendedSerializerSettings()
+                  .UsePostgreSqlStorage(Env.CRON_JOB_DB_CONNECTION_STRING, new PostgreSqlStorageOptions
+                  {
+                      SchemaName = "le.schedule"
+                  }));
         }
     }
 }
