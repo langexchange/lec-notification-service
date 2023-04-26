@@ -95,6 +95,8 @@ namespace LE.NotificationService
 
             app.UseRouting();
 
+            app.UseConsul();
+
             app.UseCors(x => x
               .AllowAnyMethod()
               .AllowAnyHeader()
