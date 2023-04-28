@@ -14,7 +14,7 @@ namespace LE.NotificationService.Hubs
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
-            await Clients.Group(groupName).SendAsync("ReceiveMessage", $"{Context.ConnectionId} has joined the group {groupName}.");
+            //await Clients.Group(groupName).SendAsync("ReceiveMessage", $"{Context.ConnectionId} has joined the group {groupName}.");
         }
 
         public async Task RemoveFromGroup(string groupName)
