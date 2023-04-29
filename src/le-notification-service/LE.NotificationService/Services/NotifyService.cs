@@ -25,59 +25,6 @@ namespace LE.NotificationService.Services
             _mapper = mapper;
         }
 
-        public async Task<bool> SeedDataAsync(CancellationToken cancellationToken = default)
-        {
-            var setting = await _context.Settings.FirstOrDefaultAsync();
-            if (setting != null)
-                return false;
-            var filename = "Jsonfiles/settingnotification.json";
-            var text = File.ReadAllText(filename);
-            var dictionary = JsonConvert.DeserializeObject<Dictionary<string, NotifySetting>>(text);
-
-            var localeSettings = dictionary.SelectMany(x =>
-            {
-                var values = x.Value.NotifyService;
-                return values.Select(y =>
-                {
-                    return new KeyValuePair<string, string>($"{x.Key}.notify-service.{y.Key}", y.Value);
-                }).ToDictionary(z => z.Key, z => z.Value);
-            }).ToDictionary(pair => pair.Key, pair => pair.Value);
-
-            var settings = localeSettings.Select(x =>
-                                                new Setting { Id = System.Guid.NewGuid(), ServiceName = "notify-service", SettingKey = x.Key, SettingValue = x.Value }
-                                                );
-            await _context.Settings.AddRangeAsync(settings);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task AddSupportLocaleAsync(List<string> locale, CancellationToken cancellationToken = default)
-        {
-            var supportedLocaleSetting = await _context.Settings.FirstOrDefaultAsync(x => x.SettingKey == NotifyKey.SUPPORT_LOCALE);
-            if (supportedLocaleSetting == null)
-            {
-                _context.Add(new Setting
-                {
-                    Id = System.Guid.NewGuid(),
-                    ServiceName = "notify-service",
-                    SettingKey = NotifyKey.SUPPORT_LOCALE,
-                    SettingValue = JsonConvert.SerializeObject(locale),
-                });
-            }
-            else
-            {
-                var supportLocale = JsonConvert.DeserializeObject<List<string>>(supportedLocaleSetting.SettingValue);
-                locale.ForEach(x => x.ToLower());
-                supportLocale.AddRange(locale);
-                supportLocale = supportLocale.Distinct().ToList();
-
-                supportedLocaleSetting.SettingValue = JsonConvert.SerializeObject(supportLocale);
-                _context.Update(supportedLocaleSetting);
-            }
-
-            await _context.SaveChangesAsync();
-        }
-
         private async Task<string> GetUserNotifyLocale(Guid userId, CancellationToken cancellationToken = default)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Userid == userId);
@@ -100,7 +47,7 @@ namespace LE.NotificationService.Services
                     }
             }
 
-            return "vi";
+            return NotifyKey.DEFAULT_SUPPORT_LOCALE;
         }
         private async Task<Guid> CreateUserNotiBoxAsync(Guid id, CancellationToken cancellationToken = default)
         {
@@ -449,13 +396,15 @@ namespace LE.NotificationService.Services
             notifications.AddRange(sharingNotiMessage);
             
             //need to translate message key to message value
-            var supportedLocale = await _context.Settings.FirstOrDefaultAsync(x => x.SettingKey == NotifyKey.SUPPORT_LOCALE);
+            var supportedLocale = await _context.Settings.Select(x => x.SettingKey).ToListAsync();
 
             var notifyLocale = await GetUserNotifyLocale(userId, cancellationToken);
             foreach(var notification in notifications)
             {
                 var keySetting = notification.NotifiKey.Substring(notification.NotifiKey.IndexOf('.') + 1);
-                notification.NotifiKey = $"{notifyLocale}.{keySetting}";
+                var fullkey = $"{notifyLocale.ToLower()}.{keySetting}";
+                if (supportedLocale.Contains(fullkey))
+                    notification.NotifiKey = fullkey;
                 //notification.NotifyMessage = "";
                 await GenerateNotifyMessage(notification, cancellationToken);
             }

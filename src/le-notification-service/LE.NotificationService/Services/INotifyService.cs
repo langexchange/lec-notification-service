@@ -9,8 +9,6 @@ namespace LE.NotificationService.Services
 {
     public interface INotifyService
     {
-        Task<bool> SeedDataAsync(CancellationToken cancellationToken = default);
-        Task AddSupportLocaleAsync(List<string> supportLocale, CancellationToken cancellationToken = default);
         Task AddToNotifyBoxAsync(PostCreatedEvent @event, CancellationToken cancellationToken = default);
         Task AddToNotifyBoxAsync(InteractPostEvent @event, CancellationToken cancellationToken = default);
         Task AddToNotifyBoxAsync(InteractCommentEvent @event, CancellationToken cancellationToken = default);

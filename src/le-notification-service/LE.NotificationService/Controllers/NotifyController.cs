@@ -42,19 +42,5 @@ namespace LE.NotificationService.Controllers
             var dtos = await _notifyService.GetNotiBoxMessageAsync(uuid, cancellationToken);
             return Ok(dtos);
         }
-
-        [HttpPost("seed-data")]
-        public async Task<IActionResult> SeedDataAsync(CancellationToken cancellationToken)
-        {
-            await _notifyService.SeedDataAsync(cancellationToken);
-            return Ok();
-        }
-
-        [HttpPost("api/notifications/settings/support-locale")]
-        public async Task<IActionResult> AddSettingSupportLocaleAsync(List<string> locale, CancellationToken cancellationToken)
-        {
-            await _notifyService.AddSupportLocaleAsync(locale, cancellationToken);
-            return Ok();
-        }
     }
 }
