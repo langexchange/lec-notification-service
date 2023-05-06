@@ -22,16 +22,19 @@ namespace LE.NotificationService.Events
     public class LearningVocabProcessCalculatedEventHandler : IAsyncHandler<LearningVocabProcessCalculatedEvent>
     {
         private readonly INotifyService _notifyService;
+        private readonly IStatisticLearningService _statisticLearningService;
 
-        public LearningVocabProcessCalculatedEventHandler(INotifyService notifyService)
+        public LearningVocabProcessCalculatedEventHandler(INotifyService notifyService, IStatisticLearningService statisticLearningService)
         {
             _notifyService = notifyService;
+            _statisticLearningService = statisticLearningService;
         }
 
         public async Task HandleAsync(IHandlerContext<LearningVocabProcessCalculatedEvent> Context, CancellationToken cancellationToken = default)
         {
             var request = Context.Request;
             await _notifyService.AddToNotifyBoxAsync(request, cancellationToken);
+            await _statisticLearningService.CreateOrUpdateStatisticLearningProcessAsync(request, cancellationToken);
         }
     }
 }

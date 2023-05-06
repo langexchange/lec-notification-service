@@ -58,7 +58,7 @@ namespace LE.NotificationService
             services.AddRequestHeader();
             services.AddScoped<INotifyService, NotifyService>();
             services.AddScoped<IScheduleService, ScheduleService>();
-            //services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IStatisticLearningService, StatisticLearningService>();
 
             AddAutoMappers(services);
             AddDbContext(services);
@@ -71,12 +71,12 @@ namespace LE.NotificationService
 
             services.AddMessageBus(Configuration, new Dictionary<Type, string>
             {
-                [typeof(PostCreatedEvent)] = MessageValue.POST_CREATED_EVENT,
-                [typeof(InteractPostEvent)] = MessageValue.INTERACTED_POST_EVENT,
-                [typeof(InteractCommentEvent)] = MessageValue.INTERACTED_COMMENT_EVENT,
-                [typeof(CommentPostEvent)] = MessageValue.COMMENTED_POST_EVENT,
-                [typeof(FriendRequestSentEvent)] = MessageValue.FRIEND_REQUEST_SENT_EVENT,
-                [typeof(FriendRequestAcceptedEvent)] = MessageValue.FRIEND_REQUEST_ACCEPT_EVENT,
+                //[typeof(PostCreatedEvent)] = MessageValue.POST_CREATED_EVENT,
+                //[typeof(InteractPostEvent)] = MessageValue.INTERACTED_POST_EVENT,
+                //[typeof(InteractCommentEvent)] = MessageValue.INTERACTED_COMMENT_EVENT,
+                //[typeof(CommentPostEvent)] = MessageValue.COMMENTED_POST_EVENT,
+                //[typeof(FriendRequestSentEvent)] = MessageValue.FRIEND_REQUEST_SENT_EVENT,
+                //[typeof(FriendRequestAcceptedEvent)] = MessageValue.FRIEND_REQUEST_ACCEPT_EVENT,
                 [typeof(LearningVocabProcessCalculatedEvent)] = MessageValue.LEARNING_PROCESS_CALCULATED_EVENT,
             }, GetMessageChannelProviderAssembly(), connectionConfig);
         }
