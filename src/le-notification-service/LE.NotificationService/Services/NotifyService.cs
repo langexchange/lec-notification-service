@@ -409,9 +409,9 @@ namespace LE.NotificationService.Services
                 await GenerateNotifyMessage(notification, cancellationToken);
             }
 
-            notifications.OrderByDescending(x => x.UpdatedAt);
+            var result = notifications.OrderByDescending(x => x.UpdatedAt).ToList();
 
-            return notifications;
+            return result;
         }
 
         public async Task AddToNotifyBoxAsync(LearningVocabProcessCalculatedEvent @event, CancellationToken cancellationToken = default)
